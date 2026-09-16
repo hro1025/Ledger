@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from models.account import Account
 from resources.theme_manager import theme_manager
 from services.account_service import create_account, get_all_accounts
 from ui.add_account_dialog import AddAccountDialog
@@ -36,23 +37,26 @@ class AccountPage(QWidget):
         self.separator.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
         self.accounts_table: QTableWidget = QTableWidget()
-        self.accounts_table.setColumnCount(3)
-        self.accounts_table.setHorizontalHeaderLabels(["Name", "Category", "Balance"])
+        self.accounts_table.setColumnCount(4)
+        self.accounts_table.setHorizontalHeaderLabels(
+            ["Name", "Category", "Balance", ""]
+        )
         self.accounts_table.horizontalHeader().setDefaultAlignment(
             Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
         )
-        self.accounts_table.setFrameShape(QFrame.Shape.NoFrame)
-        self.accounts_table.setShowGrid(False)
-        self.accounts_table.verticalHeader().setDefaultSectionSize(36)
-        self.accounts_table.setSelectionBehavior(
-            QTableWidget.SelectionBehavior.SelectRows
+        self.accounts_table.verticalHeader().setStyleSheet(
+            "QHeaderView::section { border none,}"
         )
-
+        self.accounts_table.setFrameShape(QFrame.Shape.NoFrame)
+        self.accounts_table.setSelectionMode(QTableWidget.SelectionMode.NoSelection)
+        self.accounts_table.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.accounts_table.horizontalHeader().setSectionsClickable(False)
         self.accounts_table.verticalHeader().setVisible(False)
         self.accounts_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.accounts_table.horizontalHeader().setSectionResizeMode(
             QHeaderView.ResizeMode.Stretch
         )
+        self.accounts_table.setShowGrid(False)
 
         layout: QVBoxLayout = QVBoxLayout(self)
         layout.setContentsMargins(10, 10, 10, 10)
@@ -82,6 +86,10 @@ class AccountPage(QWidget):
                 border: none;
                 padding: 4px;
             }}
+            QTableWidget::item {{
+                border-bottom: 1px solid {theme["border"]};
+                padding: 6px 4px;
+            }}
             """
         )
 
@@ -107,21 +115,62 @@ class AccountPage(QWidget):
 """)
 
     def refresh_accounts(self) -> None:
-        accounts = get_all_accounts()
+        accounts: list[Account] = get_all_accounts()
         self.accounts_table.setRowCount(len(accounts))
         for row, account in enumerate(accounts):
             self.accounts_table.setItem(row, 0, QTableWidgetItem(account.name))
-            self.accounts_table.setItem(row, 1, QTableWidgetItem(account.category))
+            self.accounts_table.setItem(row, 1, QTableWidgetItem(account.category.name))
             self.accounts_table.setItem(
                 row, 2, QTableWidgetItem(f"{account.balance:.2f}")
             )
+            self.accounts_table.setCellWidget(
+                row, 3, self._build_actions_widget(account.id)
+            )
+
+    def _build_actions_widget(self, account_id: int) -> QWidget:
+        theme = theme_manager.current_theme
+
+        container = QWidget()
+        container.setProperty("class", "action_cell")
+
+        layout = QHBoxLayout(container)
+        layout.setContentsMargins(4, 0, 4, 0)
+        layout.setSpacing(6)
+
+        edit_button = QPushButton("Edit")
+        delete_button = QPushButton("Delete")
+
+        for button in (edit_button, delete_button):
+            button.setStyleSheet(
+                f"""
+                color: {theme["accent"]};
+                background-color: transparent;
+                border: none;
+                padding: 4px 8px;
+                """
+            )
+
+        edit_button.clicked.connect(lambda: self.on_edit_account(account_id))
+        delete_button.clicked.connect(lambda: self.on_delete_account(account_id))
+
+        layout.addStretch()
+        layout.addWidget(edit_button)
+        layout.addWidget(delete_button)
+
+        return container
+
+    def on_edit_account(self, account_id: int) -> None:
+        pass
+
+    def on_delete_account(self, account_id: int) -> None:
+        pass
 
     def open_add_account_dialog(self) -> None:
-        dialog = AddAccountDialog(self)
+        dialog: AddAccountDialog = AddAccountDialog(parent=self)
         if dialog.exec() == AddAccountDialog.DialogCode.Accepted:
             create_account(
                 name=dialog.name_input.text(),
-                category=dialog.category_input.text(),
+                category_id=dialog.category_input.currentData(),
                 balance=float(dialog.balance_input.text() or 0),
             )
             self.refresh_accounts()

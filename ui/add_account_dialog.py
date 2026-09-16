@@ -1,5 +1,7 @@
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QDoubleValidator
 from PySide6.QtWidgets import (
+    QComboBox,
     QDialog,
     QHBoxLayout,
     QLabel,
@@ -9,11 +11,10 @@ from PySide6.QtWidgets import (
 )
 
 from resources.theme_manager import theme_manager
+from services.category_service import get_all_categories
 
 
 class AddAccountDialog(QDialog):
-    """Ported from Apex.Dialog.AccountAddButtonDialog."""
-
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self.setFixedSize(300, 400)
@@ -25,11 +26,15 @@ class AddAccountDialog(QDialog):
         self.name_input: QLineEdit = QLineEdit()
         self.name_input.setPlaceholderText("Name")
 
-        self.category_input: QLineEdit = QLineEdit()
-        self.category_input.setPlaceholderText("Category")
+        self.category_input: QComboBox = QComboBox()
+        for category in get_all_categories():
+            self.category_input.addItem(category.name, category.id)
+        self.category_input.setCurrentIndex(-1)
+        self.category_input.setPlaceholderText("Select a category")
 
         self.balance_input: QLineEdit = QLineEdit()
         self.balance_input.setPlaceholderText("0.00")
+        self.balance_input.setValidator(QDoubleValidator())
 
         fields_column: QVBoxLayout = QVBoxLayout()
         fields_column.setSpacing(10)

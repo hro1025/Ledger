@@ -2,8 +2,10 @@ from PySide6.QtCore import QSettings
 from PySide6.QtGui import QColor, QPalette
 
 from resources.themes.catppuccin_mocha import CATPPUCCIN_MOCHA
+from resources.themes.dark import DARK
 from resources.themes.dracula import DRACULA
 from resources.themes.gruvbox_dark import GRUVBOX_DARK
+from resources.themes.light import LIGHT
 from resources.themes.nord import NORD
 from resources.themes.solarized_light import SOLARIZED_LIGHT
 
@@ -13,6 +15,8 @@ THEMES: dict[str, dict[str, str]] = {
     "Nord": NORD,
     "Solarized Light": SOLARIZED_LIGHT,
     "Gruvbox Dark": GRUVBOX_DARK,
+    "Light": LIGHT,
+    "Dark": DARK,
 }
 
 
